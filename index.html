@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>盘聚 FrisbeeGroup | 智能飞盘分队助手</title>
+  <meta name="description" content="免注册、无数据库的轻量级飞盘智能分队工具。支持多维度评分、实力均衡、多种出奇制胜策略，智能避开历史重复分组，数据本地存储安全可靠。">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+SC:wght@300;400;700&display=swap"
+    rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="dark-theme">
+  <div class="app-container">
+
+    <!-- Background elements for visual effects -->
+    <div class="glow-bg">
+      <div class="glow-sphere glow-1"></div>
+      <div class="glow-sphere glow-2"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon"><i class="fa-solid fa-compact-disc disc-spin"></i></div>
+        <div class="logo-text">
+          <h1>盘聚 <span>FrisbeeGroup</span></h1>
+          <p>智能飞盘分队系统</p>
+        </div>
+      </div>
+      <div class="quick-status">
+        <span id="header-member-count"><i class="fa-solid fa-users"></i> 队员: 0</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="app-nav">
+      <button class="nav-tab active" id="tab-btn-play" onclick="switchTab('play')">
+        <i class="fa-solid fa-gamepad"></i><span>打盘分组</span>
+      </button>
+      <button class="nav-tab" id="tab-btn-roster" onclick="switchTab('roster')">
+        <i class="fa-solid fa-user-gear"></i><span>队员管理</span>
+      </button>
+      <button class="nav-tab" id="tab-btn-data" onclick="switchTab('data')">
+        <i class="fa-solid fa-gears"></i><span>设置中心</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+
+      <!-- Tab 1: Play / Grouping Console -->
+      <section id="tab-play" class="tab-panel active">
+        <!-- Dashboard Top: Active Lineup selection -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-clipboard-list text-neon"></i>
+              <h2>今日出勤队员</h2>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-outline btn-xs" id="btn-select-all" onclick="selectAllPlayers(true)">全选</button>
+              <button class="btn btn-outline btn-xs" id="btn-deselect-all" onclick="selectAllPlayers(false)">清除</button>
+            </div>
+          </div>
+
+          <div class="lineup-stats">
+            <span class="badge" id="stats-total-selected">已选: 0 人</span>
+            <span class="badge gender-badge male-badge" id="stats-male-selected"><i class="fa-solid fa-mars"></i>
+              0</span>
+            <span class="badge gender-badge female-badge" id="stats-female-selected"><i class="fa-solid fa-venus"></i>
+              0</span>
+          </div>
+
+          <!-- Selection List Grid -->
+          <div class="player-selection-grid" id="selection-grid">
+            <!-- Dynamically populated -->
+            <div class="empty-state">
+              <i class="fa-solid fa-user-plus"></i>
+              <p>暂无队员数据，请先前往“队员管理”录入队员</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grouping Settings -->
+        <div class="card glass-card margin-top">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-sliders text-neon"></i>
+              <h2>分组参数设置</h2>
+            </div>
+          </div>
+
+          <div class="settings-form">
+            <!-- Grouping Count -->
+            <div class="form-group">
+              <label for="group-count">队伍数量</label>
+              <div class="select-wrapper">
+                <select id="group-count" onchange="updateGroupSizeEstimation()">
+                  <option value="2" selected>分 2 队 (双边对抗)</option>
+                  <option value="3">分 3 队 (轮空/大乱斗)</option>
+                  <option value="4">分 4 队 (杯赛对抗)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Group Strategy -->
+            <div class="form-group">
+              <label>分组策略</label>
+              <div class="strategy-selector-grid">
+                <input type="radio" id="strat-balance" name="group-strategy" value="balance" checked>
+                <label for="strat-balance" class="strategy-option">
+                  <i class="fa-solid fa-scale-balanced text-cyan"></i>
+                  <div class="strategy-info">
+                    <strong>实力均衡</strong>
+                    <span>战力计算，势均力敌</span>
+                  </div>
+                </label>
+
+                <input type="radio" id="strat-run-dog" name="group-strategy" value="run-dog">
+                <label for="strat-run-dog" class="strategy-option">
+                  <i class="fa-solid fa-dog text-neon"></i>
+                  <div class="strategy-info">
+                    <strong>看盘跑死狗</strong>
+                    <span>精准控盘手 + 速度飞人组合</span>
+                  </div>
+                </label>
+
+                <input type="radio" id="strat-lion-sheep" name="group-strategy" value="lion-sheep">
+                <label for="strat-lion-sheep" class="strategy-option">
+                  <i class="fa-solid fa-shield-cat"></i>
+                  <div class="strategy-info">
+                    <strong>跟着狮子的绵羊也是狮子</strong>
+                    <span>单核带队，激发全队上限</span>
+                  </div>
+                </label>
+
+                <input type="radio" id="strat-god" name="group-strategy" value="god">
+                <label for="strat-god" class="strategy-option">
+                  <i class="fa-solid fa-dice"></i>
+                  <div class="strategy-info">
+                    <strong>上帝安排</strong>
+                    <span>融入随机扰动，惊喜战局</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Toggle Options -->
+            <div class="form-group toggles-group">
+              <label class="toggle-control">
+                <input type="checkbox" id="opt-gender-balance" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label"><i class="fa-solid fa-venus-mars"></i> 男女比例强力均衡 (两队比例最接近)</span>
+              </label>
+
+              <label class="toggle-control">
+                <input type="checkbox" id="opt-avoid-history" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label"><i class="fa-solid fa-clock-rotate-left"></i> 避免历史重复分组 (比对历史记录)</span>
+              </label>
+            </div>
+
+            <!-- Action Button -->
+            <div class="action-btn-area">
+              <button class="btn btn-primary btn-block btn-lg" id="btn-generate-groups" onclick="generateGroups()">
+                <i class="fa-solid fa-shuffle"></i> 智能生成分组
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Section (Collapsible/Hidden by default) -->
+        <div class="card glass-card result-card margin-top hidden" id="result-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-trophy text-neon"></i>
+              <h2>分组计算结果</h2>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-outline btn-sm" onclick="copyResultText()">
+                <i class="fa-regular fa-copy"></i> 复制结果文本
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Shuffle Animation overlay -->
+          <div class="shuffle-animation-container hidden" id="shuffle-loader">
+            <div class="disc-loader">
+              <i class="fa-solid fa-compact-disc"></i>
+            </div>
+            <p>盘片旋转中，正在计算最佳阵容...</p>
+          </div>
+
+          <!-- Group Output Rows -->
+          <div class="groups-output-container" id="groups-output">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="card glass-card margin-top" id="history-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-history text-muted"></i>
+              <h2>最近分盘历史 (最近30次记录)</h2>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-link btn-xs" onclick="clearHistory()">清空历史</button>
+            </div>
+          </div>
+          <div class="history-list" id="history-list">
+            <div class="empty-state-small">暂无历史记录</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 2: Roster Management -->
+      <section id="tab-roster" class="tab-panel">
+
+        <!-- Player Input Card -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-user-plus text-neon"></i>
+              <h2 id="roster-form-title">添加队员</h2>
+            </div>
+            <button class="btn btn-outline btn-xs hidden" id="btn-cancel-edit" onclick="resetRosterForm()">取消编辑</button>
+          </div>
+
+          <form id="player-form" onsubmit="savePlayer(event)">
+            <input type="hidden" id="edit-player-id">
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="player-name">队员姓名/昵称</label>
+                <input type="text" id="player-name" required placeholder="请输入名字 (如: 小明)" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label>性别</label>
+                <div class="gender-selector-group">
+                  <input type="radio" id="gender-male" name="player-gender" value="male" checked>
+                  <label for="gender-male" class="gender-btn btn-male">
+                    <i class="fa-solid fa-mars"></i> 男生
+                  </label>
+
+                  <input type="radio" id="gender-female" name="player-gender" value="female">
+                  <label for="gender-female" class="gender-btn btn-female">
+                    <i class="fa-solid fa-venus"></i> 女生
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Interactive Heptagon Radar Chart Editor -->
+            <div class="radar-editor-wrapper">
+              <div class="radar-overall-badge">
+                <span class="overall-title">综合战力</span>
+                <span class="overall-num" id="radar-overall-val">3.0</span>
+              </div>
+
+              <div class="radar-svg-container">
+                <svg id="radar-editor-svg" viewBox="0 0 340 340">
+                  <!-- Generated dynamically in JS -->
+                </svg>
+              </div>
+
+              <!-- A list of dimensions with values and interactive button adjusters -->
+              <div class="radar-values-editor-list" id="radar-values-list">
+                <!-- Dynamically populated by app.js -->
+              </div>
+            </div>
+
+            <div class="form-submit-row">
+              <button type="submit" class="btn btn-primary" id="btn-save-player">
+                <i class="fa-solid fa-check"></i> 保存队员
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Roster List Card -->
+        <div class="card glass-card margin-top">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-users-gear text-neon"></i>
+              <h2>队员名单库 (<span id="roster-count">0</span>)</h2>
+            </div>
+            <div class="card-actions search-action">
+              <input type="text" id="roster-search" placeholder="搜索队员..." class="search-input"
+                oninput="renderRosterList()">
+            </div>
+          </div>
+
+          <div class="roster-table-container">
+            <table class="roster-table">
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th>性别</th>
+                  <th>综合战力</th>
+                  <th class="actions-col">操作</th>
+                </tr>
+              </thead>
+              <tbody id="roster-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Tab 3: Settings & Local Storage Cleanup -->
+      <section id="tab-data" class="tab-panel">
+        <div class="card glass-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-gears text-neon"></i>
+              <h2>数据设置中心</h2>
+            </div>
+          </div>
+
+          <div class="data-actions-card">
+            <p class="data-intro">
+              由于本项目免注册且无中央数据库，所有队员评分和分组记录均储存在您这台手机的浏览器缓存中。
+            </p>
+
+            <div class="data-btn-grid">
+              <button class="btn btn-outline" onclick="exportDataToFile()">
+                <i class="fa-solid fa-download"></i> 导出备份文件 (JSON)
+              </button>
+
+              <div class="btn btn-outline upload-btn-wrapper">
+                <i class="fa-solid fa-upload"></i> 导入备份文件
+                <input type="file" id="import-file-input" accept=".json" onchange="importDataFromFile(event)">
+              </div>
+            </div>
+
+            <hr class="divider">
+
+            <div class="factory-reset-section">
+              <h3 class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> 危险操作区域</h3>
+              <p class="data-sub-intro margin-top">
+                清除应用在本地浏览器中保存的所有队员数据、历史记录和配置。清除后数据将无法找回。
+              </p>
+              <button class="btn btn-danger btn-block margin-top" onclick="factoryReset()">
+                <i class="fa-solid fa-trash-can"></i> 清除所有本地队员数据
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer-bar text-center">
+      <p>© 2026 盘聚 FrisbeeGroup • 户外运动智能分队小助手 • 终身开源免费</p>
+    </footer>
+
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JavaScript Code -->
+  <script src="algo.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
